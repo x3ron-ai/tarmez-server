@@ -1,0 +1,154 @@
+diff --git a/.gitignore b/.gitignore
+index f2af8ff..3627c14 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -4,6 +4,7 @@ __pycache__/
+ 
+ *.so
+ *.sh
++*.ini
+ 
+ .Python
+ build/
+diff --git a/app/api/messages.py b/app/api/messages.py
+index 50d4f5b..3058814 100644
+--- a/app/api/messages.py
++++ b/app/api/messages.py
+@@ -14,20 +14,12 @@ def create_message(
+ 	db: Session = Depends(get_db),
+ 	user: User = Depends(get_current_user)
+ ):
+-	msg = Message(content=payload.content, user_id=user.id)
++	msg = Message(
++		content=payload.content,
++		sender_id=user.id,
++		receiver_id=payload.receiver_id
++	)
+ 	db.add(msg)
+ 	db.commit()
+ 	db.refresh(msg)
+ 	return msg
+-
+-@router.get("/", response_model=list[MessageOut])
+-def list_messages(
+-	db: Session = Depends(get_db),
+-	user: User = Depends(get_current_user)
+-):
+-	return (
+-		db.query(Message)
+-		.filter(Message.user_id == user.id)
+-		.order_by(Message.created_at.desc())
+-		.all()
+-	)
+diff --git a/app/api/users.py b/app/api/users.py
+index 5c31e55..e4471b2 100644
+--- a/app/api/users.py
++++ b/app/api/users.py
+@@ -1,11 +1,11 @@
+ from fastapi import APIRouter, Depends, HTTPException, status
+-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
++from fastapi.security import OAuth2PasswordBearer
+ from sqlalchemy.orm import Session
+ from jose import JWTError, jwt
+ 
+ from app.db.session import get_db
+ from app.models.user import User
+-from app.schemas.user import UserCreate, UserOut, Token, TokenData
++from app.schemas.user import UserCreate, UserOut, Token, TokenData, UserLogin
+ from app.core.security import get_password_hash, verify_password, create_access_token
+ from app.core.config import settings
+ 
+@@ -57,10 +57,14 @@ def register_user(payload: UserCreate, db: Session = Depends(get_db)):
+ 	return user
+ 
+ @router.post("/login", response_model=Token)
+-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+-	user = authenticate_user(db, form_data.username, form_data.password)
++def login(payload: UserLogin, db: Session = Depends(get_db)):
++	user = authenticate_user(db, payload.username, payload.password)
+ 	if not user:
+-		raise HTTPException(status_code=400, detail="Incorrect username or password")
++		raise HTTPException(
++			status_code=status.HTTP_401_UNAUTHORIZED,
++			detail="Incorrect username or password",
++			headers={"WWW-Authenticate": "Bearer"},
++		)
+ 	access_token = create_access_token({"sub": user.username})
+ 	return Token(access_token=access_token)
+ 
+diff --git a/app/main.py b/app/main.py
+index 487ef78..0fd7d62 100644
+--- a/app/main.py
++++ b/app/main.py
+@@ -1,5 +1,5 @@
+ from fastapi import FastAPI
+-from app.api import users, messages
++from app.api import users, messages, chats
+ from app.db.session import Base, engine
+ 
+ Base.metadata.create_all(bind=engine)
+@@ -7,6 +7,7 @@ Base.metadata.create_all(bind=engine)
+ app = FastAPI(title="TarmeZ Messenger API")
+ 
+ app.include_router(users.router, prefix="/users", tags=["users"])
++app.include_router(chats.router, prefix="/chats", tags=["chats"])
+ app.include_router(messages.router, prefix="/messages", tags=["messages"])
+ 
+ @app.get("/")
+diff --git a/app/models/message.py b/app/models/message.py
+index 931bf84..c49a03f 100644
+--- a/app/models/message.py
++++ b/app/models/message.py
+@@ -9,5 +9,8 @@ class Message(Base):
+ 	content = Column(String(1000), nullable=False)
+ 	created_at = Column(DateTime(timezone=True), server_default=func.now())
+ 
+-	user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+-	user = relationship("User", backref="messages")
+\ No newline at end of file
++	sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
++	receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
++
++	sender = relationship("User", foreign_keys=[sender_id], backref="sent_messages")
++	receiver = relationship("User", foreign_keys=[receiver_id], backref="received_messages")
+\ No newline at end of file
+diff --git a/app/schemas/message.py b/app/schemas/message.py
+index 2d97424..22cc5fd 100644
+--- a/app/schemas/message.py
++++ b/app/schemas/message.py
+@@ -5,12 +5,13 @@ class MessageBase(BaseModel):
+ 	content: str
+ 
+ class MessageCreate(MessageBase):
+-	pass
++	receiver_id: int
+ 
+ class MessageOut(MessageBase):
+ 	id: int
+ 	created_at: datetime
+-	user_id: int | None
++	sender_id: int
++	receiver_id: int
+ 
+ 	class Config:
+ 		from_attributes = True
+\ No newline at end of file
+diff --git a/app/schemas/user.py b/app/schemas/user.py
+index 73ab8db..74761f6 100644
+--- a/app/schemas/user.py
++++ b/app/schemas/user.py
+@@ -6,10 +6,13 @@ class UserBase(BaseModel):
+ class UserCreate(UserBase):
+ 	password: str
+ 
++class UserLogin(UserBase):
++	password: str
++
+ class UserOut(UserBase):
+ 	id: int
+ 	class Config:
+-		from_attributes = True
++		orm_mode = True
+ 
+ class Token(BaseModel):
+ 	access_token: str

@@ -4,6 +4,7 @@ __pycache__/
 
 *.so
 *.sh
+*.ini
 
 .Python
 build/

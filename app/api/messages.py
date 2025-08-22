@@ -14,20 +14,12 @@ def create_message(
 	db: Session = Depends(get_db),
 	user: User = Depends(get_current_user)
 ):
-	msg = Message(content=payload.content, user_id=user.id)
+	msg = Message(
+		content=payload.content,
+		sender_id=user.id,
+		receiver_id=payload.receiver_id
+	)
 	db.add(msg)
 	db.commit()
 	db.refresh(msg)
 	return msg
-
-@router.get("/", response_model=list[MessageOut])
-def list_messages(
-	db: Session = Depends(get_db),
-	user: User = Depends(get_current_user)
-):
-	return (
-		db.query(Message)
-		.filter(Message.user_id == user.id)
-		.order_by(Message.created_at.desc())
-		.all()
-	)

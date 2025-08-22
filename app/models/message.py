@@ -9,5 +9,8 @@ class Message(Base):
 	content = Column(String(1000), nullable=False)
 	created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-	user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-	user = relationship("User", backref="messages")
+	sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+	receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+	sender = relationship("User", foreign_keys=[sender_id], backref="sent_messages")
+	receiver = relationship("User", foreign_keys=[receiver_id], backref="received_messages")
