@@ -10,4 +10,7 @@ class Settings(BaseModel):
 	access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 	database_url: str = os.getenv("DATABASE_URL")
 
+	longpoll_timeout: int = 15
+	longpoll_interval: int = 1
+
 settings = Settings()
