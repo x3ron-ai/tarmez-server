@@ -1,15 +1,13 @@
 from fastapi import FastAPI
-from app.api import users, messages, chats
+from app.api import api_router
 from app.db.session import Base, engine
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="TarmeZ Messenger API")
 
-app.include_router(users.router, prefix="/users", tags=["users"])
-app.include_router(chats.router, prefix="/chats", tags=["chats"])
-app.include_router(messages.router, prefix="/messages", tags=["messages"])
+app.include_router(api_router, prefix="/api")
 
-@app.get("/")
+@app.get("/ping")
 def root():
-	return {"msg": "tarmez up"}
+	return {"msg": "pong"}
