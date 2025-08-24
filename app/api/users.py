@@ -31,13 +31,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 	)
 	try:
 		payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
-		username: str | None = payload.get("sub")
-		if username is None:
+		user_id: str | None = payload.get("sub")
+		if user_id is None:
 			raise credentials_exception
-		token_data = TokenData(sub=username)
+		token_data = TokenData(sub=user_id)
 	except JWTError:
 		raise credentials_exception
-	user = get_user_by_username(db, token_data.sub)
+	user = db.query(User).filter(User.id == int(token_data.sub)).first()
 	if user is None:
 		raise credentials_exception
 	return user
@@ -65,9 +65,23 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
 			detail="Incorrect username or password",
 			headers={"WWW-Authenticate": "Bearer"},
 		)
-	access_token = create_access_token({"sub": user.username})
+	access_token = create_access_token({"sub": str(user.id)})
 	return Token(access_token=access_token)
 
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):
 	return current_user
+
+@router.get("/search", response_model=list[UserOut])
+def search_users(
+	username: str,
+	db: Session = Depends(get_db),
+	current_user: User = Depends(get_current_user)
+):
+	users = (
+		db.query(User)
+		.filter(User.username.ilike(f"%{username}%"))
+		.filter(User.id != current_user.id)
+		.all()
+	)
+	return users

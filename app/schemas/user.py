@@ -12,11 +12,11 @@ class UserLogin(UserBase):
 class UserOut(UserBase):
 	id: int
 	class Config:
-		orm_mode = True
+		from_attributes = True
 
 class Token(BaseModel):
 	access_token: str
 	token_type: str = "bearer"
 
 class TokenData(BaseModel):
-	sub: str | None = None
+	sub: int | None = None
