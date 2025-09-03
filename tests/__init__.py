@@ -1,2 +1,2 @@
 import os
-os.environ["TESTING"] = "1"
+os.environ["DATABASE_URL"] = "sqlite:///./test_db.sqlite3"

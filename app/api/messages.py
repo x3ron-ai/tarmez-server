@@ -17,7 +17,6 @@ def send_message(
 	db: Session = Depends(get_db),
 	user: User = Depends(get_current_user)
 ):
-	# Проверка существования получателя
 	receiver = db.query(User).filter(User.id == payload.receiver_id).first()
 	if not receiver:
 		raise HTTPException(status_code=404, detail="Receiver not found")
@@ -46,8 +45,7 @@ async def get_updates(
 			db.query(Message)
 			.filter(
 				Message.id > last_message_id,
-				((Message.sender_id == user.id) | (Message.receiver_id == user.id)),
-				Message.sender_id != user.id
+				((Message.sender_id == user.id) | (Message.receiver_id == user.id))
 			)
 			.order_by(Message.created_at.asc())
 			.all()

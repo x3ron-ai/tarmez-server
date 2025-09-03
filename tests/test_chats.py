@@ -1,23 +1,17 @@
 import os
-
-# Удаляем тестовую БД перед запуском
-db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "test_db.sqlite3")
-if os.path.exists(db_path):
-	try:
-		os.remove(db_path)
-	except OSError as e:
-		print(f"Failed to remove database file: {e}")
-
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+import uuid
 client = TestClient(app)
 
 
 @pytest.fixture
 def user_tokens():
-	u1 = {"username": "user1", "password": "pass1"}
-	u2 = {"username": "user2", "password": "pass2"}
+	name1 = f"user1_{uuid.uuid4()}"
+	name2 = f"user2_{uuid.uuid4()}"
+	u1 = {"username": name1, "password": "pass1"}
+	u2 = {"username": name2, "password": "pass2"}
 
 	r = client.post("/api/users/register", json=u1)
 	assert r.status_code == 201
@@ -26,11 +20,12 @@ def user_tokens():
 
 	r1 = client.post("/api/users/login", json=u1)
 	r2 = client.post("/api/users/login", json=u2)
-	return r1.json()["access_token"], r2.json()["access_token"]
+	return (name1, r1.json()["access_token"]), (name2, r2.json()["access_token"])
 
 
 def test_direct_message_flow(user_tokens):
-	token1, token2 = user_tokens
+	user1, user2 = user_tokens
+	token1, token2 = user1[1], user2[1]
 	headers1 = {"Authorization": f"Bearer {token1}"}
 	headers2 = {"Authorization": f"Bearer {token2}"}
 
@@ -39,7 +34,7 @@ def test_direct_message_flow(user_tokens):
 	results = r.json()
 	user1_id = results["id"]
 
-	r = client.get("/api/users/search", params={"username": "user2"}, headers=headers1)
+	r = client.get("/api/users/search", params={"username": user2[0]}, headers=headers1)
 	assert r.status_code == 200
 	results = r.json()
 	assert len(results) == 1
