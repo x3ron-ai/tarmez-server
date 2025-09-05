@@ -5,10 +5,11 @@ from app.db.session import get_db
 from app.models.message import Message
 from app.models.user import User
 from app.api.users import get_current_user
+from app.schemas.chat import ChatOut
 
 router = APIRouter()
 
-@router.get("/", response_model=list[dict])
+@router.get("/", response_model=list[ChatOut])
 def list_chats(
 	db: Session = Depends(get_db),
 	user: User = Depends(get_current_user)
@@ -27,10 +28,10 @@ def list_chats(
 	)
 
 	partners = (
-		db.query(User.id, User.username)
+		db.query(User)
 		.filter(User.id.in_(select(subq.c.user_id)))
 		.filter(User.id != user.id)
 		.all()
 	)
 
-	return [{"id": u.id, "username": u.username} for u in partners]
+	return partners
