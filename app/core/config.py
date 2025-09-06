@@ -8,7 +8,7 @@ class Settings(BaseModel):
 	secret_key: str = os.getenv("SECRET_KEY", "change_me")
 	algorithm: str = os.getenv("ALGORITHM", "HS256")
 	access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
-	database_url: str = os.getenv("DATABASE_URL")
+	database_url: str = os.getenv("DATABASE_URL", "sqlite:///./test_db.sqlite3")
 	longpoll_timeout: int = 15
 	longpoll_interval: int = 1
 
