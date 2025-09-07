@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict
+from .user import UserOut
 from datetime import datetime
 
 class MessageBase(BaseModel):
@@ -9,8 +10,8 @@ class MessageCreate(MessageBase):
 
 class MessageOut(MessageBase):
 	id: int
-	sender_id: int
-	receiver_id: int
+	sender: UserOut
+	receiver: UserOut
 	created_at: datetime
-
+	
 	model_config = ConfigDict(from_attributes=True)

@@ -1,6 +1,6 @@
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.db.session import get_db
 from app.models.message import Message
 from app.models.user import User
@@ -28,7 +28,7 @@ def send_message(
 	)
 	db.add(msg)
 	db.commit()
-	db.refresh(msg)
+	db.refresh(msg, attribute_names=["sender", "receiver"])
 	return msg
 
 
@@ -43,6 +43,7 @@ async def get_updates(
 	for _ in range(timeout):
 		new_messages = (
 			db.query(Message)
+			.options(joinedload(Message.sender), joinedload(Message.receiver))
 			.filter(
 				Message.id > last_message_id,
 				((Message.sender_id == user.id) | (Message.receiver_id == user.id))
@@ -63,6 +64,7 @@ def get_messages_with_user(
 ):
 	messages = (
 		db.query(Message)
+		.options(joinedload(Message.sender), joinedload(Message.receiver))
 		.filter(
 			((Message.sender_id == current_user.id) & (Message.receiver_id == other_user_id)) |
 			((Message.sender_id == other_user_id) & (Message.receiver_id == current_user.id))
