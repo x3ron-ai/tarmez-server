@@ -45,7 +45,7 @@ def test_direct_message_flow(user_tokens):
 	assert r.status_code == 201
 	message_data = r.json()
 	assert message_data["content"] == "Hello!"
-	assert message_data["sender_id"] != message_data["receiver_id"]
+	assert message_data["sender"]["id"] != message_data["receiver"]["id"]
 
 	r = client.get(f"/api/messages/with/{user1_id}", headers=headers2)
 	assert r.status_code == 200
@@ -53,4 +53,4 @@ def test_direct_message_flow(user_tokens):
 	print(messages)
 	assert len(messages) == 1
 	assert messages[0]["content"] == "Hello!"
-	assert messages[0]["sender_id"] != messages[0]["receiver_id"]
+	assert messages[0]["sender"]["id"] != messages[0]["receiver"]["id"]
