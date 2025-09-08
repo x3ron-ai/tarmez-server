@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import case, or_, select
+from sqlalchemy import case, or_, select, desc
 from app.db.session import get_db
 from app.models.message import Message
 from app.models.user import User
@@ -34,4 +34,27 @@ def list_chats(
 		.all()
 	)
 
-	return partners
+	chats_out = []
+
+	for partner in partners:
+		last_message = (
+			db.query(Message)
+			.filter(
+				or_(
+					(Message.sender_id == user.id) & (Message.receiver_id == partner.id),
+					(Message.sender_id == partner.id) & (Message.receiver_id == user.id)
+				)
+			)
+			.order_by(desc(Message.created_at))
+			.first()
+		)
+
+		chats_out.append(
+			ChatOut(
+				id=partner.id,
+				username=partner.username,
+				last_message=last_message
+			)
+		)
+
+	return chats_out
