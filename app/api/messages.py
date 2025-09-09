@@ -59,6 +59,8 @@ async def get_updates(
 @router.get("/with/{other_user_id}", response_model=list[MessageOut])
 def get_messages_with_user(
 	other_user_id: int,
+	limit: int = 50,
+	offset: int = 0,
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user)
 ):
@@ -69,7 +71,10 @@ def get_messages_with_user(
 			((Message.sender_id == current_user.id) & (Message.receiver_id == other_user_id)) |
 			((Message.sender_id == other_user_id) & (Message.receiver_id == current_user.id))
 		)
-		.order_by(Message.created_at.asc())
+		.order_by(Message.created_at.desc())
+		.offset(offset)
+		.limit(limit)
 		.all()
 	)
-	return messages
+
+	return list(reversed(messages))
