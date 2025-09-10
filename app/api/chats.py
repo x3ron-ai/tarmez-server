@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from sqlalchemy import case, or_, select, desc
+from sqlalchemy.orm import Session, aliased
+from sqlalchemy import case, or_, select, desc, func
 from app.db.session import get_db
 from app.models.message import Message
 from app.models.user import User
@@ -14,41 +14,32 @@ def list_chats(
 	db: Session = Depends(get_db),
 	user: User = Depends(get_current_user)
 ):
+	partner_id = case(
+		(Message.sender_id == user.id, Message.receiver_id),
+		else_=Message.sender_id
+	).label("partner_id")
+
+	row_number_col = func.row_number().over(
+		partition_by=partner_id,
+		order_by=desc(Message.created_at)
+	).label("rn")
+
 	subq = (
-		db.query(
-			case(
-				(Message.sender_id == user.id, Message.receiver_id),
-				else_=Message.sender_id
-			).label("user_id")
-		)
-		.filter(
-			or_(Message.sender_id == user.id, Message.receiver_id == user.id)
-		)
+		select(Message, partner_id, row_number_col)
+		.filter(or_(Message.sender_id == user.id, Message.receiver_id == user.id))
 		.subquery()
 	)
 
+	last_messages = aliased(Message, subq)
 	partners = (
-		db.query(User)
-		.filter(User.id.in_(select(subq.c.user_id)))
-		.filter(User.id != user.id)
+		db.query(User, last_messages)
+		.join(subq, User.id == subq.c.partner_id)
+		.filter(subq.c.rn == 1)
 		.all()
 	)
 
 	chats_out = []
-
-	for partner in partners:
-		last_message = (
-			db.query(Message)
-			.filter(
-				or_(
-					(Message.sender_id == user.id) & (Message.receiver_id == partner.id),
-					(Message.sender_id == partner.id) & (Message.receiver_id == user.id)
-				)
-			)
-			.order_by(desc(Message.created_at))
-			.first()
-		)
-
+	for partner, last_message in partners:
 		chats_out.append(
 			ChatOut(
 				id=partner.id,
