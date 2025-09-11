@@ -1,5 +1,7 @@
 ## Tarmez-API
 
+A simple, easy-to-deploy Python messenger built with FastAPI, designed for learning and self-study purposes.
+
 FastAPI server implementation in Python, which can help you host your own messaging application
 
 
