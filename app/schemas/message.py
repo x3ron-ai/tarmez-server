@@ -1,6 +1,9 @@
-from pydantic import BaseModel, ConfigDict
+from typing import Annotated
+from pydantic import BaseModel, ConfigDict, StringConstraints
 from .user import UserOut
 from datetime import datetime
+
+MessageContent = Annotated[str, StringConstraints(min_length=1, max_length=1000)]
 
 class MessageBase(BaseModel):
 	content: str

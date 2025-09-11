@@ -44,7 +44,7 @@ def test_bad_token_websocket():
 		with client.websocket_connect(f"/api/ws/messages?token=BAD_TOKEN") as ws1:
 			assert ws1.receive_json() == 1
 	except WebSocketDisconnect as e:
-		assert e.code == 4001
+		assert e.code == 4002
 		assert e.reason == "Invalid token"
 
 def test_no_token_provided_websocket():

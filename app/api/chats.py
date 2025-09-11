@@ -26,7 +26,10 @@ def list_chats(
 
 	subq = (
 		select(Message, partner_id, row_number_col)
-		.filter(or_(Message.sender_id == user.id, Message.receiver_id == user.id))
+		.filter(
+			or_(Message.sender_id == user.id, Message.receiver_id == user.id),
+			Message.deleted == False
+		)
 		.subquery()
 	)
 

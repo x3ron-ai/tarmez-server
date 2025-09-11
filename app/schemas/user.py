@@ -1,13 +1,20 @@
-from pydantic import BaseModel, constr
+from typing import Annotated
+from pydantic import BaseModel, StringConstraints
+from app.core.config import settings
 
 class UserBase(BaseModel):
 	username: str
 
-class UserCreate(UserBase):
-	password: constr(
+PasswordStr = Annotated[
+	str,
+	StringConstraints(
 		min_length=settings.password_min_length,
-		max_length=settings.password_max_length
+		max_length=settings.password_max_length,
 	)
+]
+
+class UserCreate(UserBase):
+	password: PasswordStr
 
 class UserLogin(UserBase):
 	password: str

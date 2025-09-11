@@ -63,7 +63,7 @@ async def websocket_endpoint(websocket: WebSocket):
 	try:
 		user = await get_current_user_ws(token)
 	except HTTPException:
-		await websocket.close(code=4001, reason="Invalid token")
+		await websocket.close(code=4002, reason="Invalid token")
 		return
 
 	await manager.connect(user.id, websocket)

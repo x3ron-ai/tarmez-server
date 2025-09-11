@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, func
 from sqlalchemy.orm import relationship
 from app.db.session import Base
 
@@ -14,3 +14,5 @@ class Message(Base):
 
 	receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 	receiver = relationship("User", foreign_keys=[receiver_id], back_populates="received_messages")
+
+	deleted = Column(Boolean, default=False, nullable=False)
