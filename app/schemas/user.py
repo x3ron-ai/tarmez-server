@@ -4,7 +4,10 @@ class UserBase(BaseModel):
 	username: str
 
 class UserCreate(UserBase):
-	password: constr(min_length=8, max_length=128)
+	password: constr(
+		min_length=settings.password_min_length,
+		max_length=settings.password_max_length
+	)
 
 class UserLogin(UserBase):
 	password: str

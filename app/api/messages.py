@@ -59,7 +59,7 @@ async def get_updates(
 @router.get("/with/{other_user_id}", response_model=list[MessageOut])
 def get_messages_with_user(
 	other_user_id: int,
-	limit: int = 50,
+	limit: int = settings.default_message_limit,
 	offset: int = 0,
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user)

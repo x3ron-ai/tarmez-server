@@ -77,7 +77,7 @@ def search_users(
 	username: str,
 	db: Session = Depends(get_db),
 	current_user: User = Depends(get_current_user),
-	limit: int = 10
+	limit: int = settings.default_search_limit
 ):
 	users = (
 		db.query(User)
