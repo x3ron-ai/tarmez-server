@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
@@ -10,7 +10,7 @@ from app.core.security import get_password_hash, verify_password, create_access_
 from app.core.config import settings
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/login-swagger")
 
 def get_user_by_username(db: Session, username: str) -> User | None:
 	return db.query(User).filter(User.username == username).first()
@@ -55,6 +55,21 @@ def register_user(payload: UserCreate, db: Session = Depends(get_db)):
 	db.commit()
 	db.refresh(user)
 	return user
+
+@router.post("/login-swagger", response_model=Token, include_in_schema=False)
+def login_for_swagger(
+    username: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    user = authenticate_user(db, username, password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+        )
+    access_token = create_access_token({"sub": str(user.id)})
+    return Token(access_token=access_token)
 
 @router.post("/login", response_model=Token)
 def login(payload: UserLogin, db: Session = Depends(get_db)):

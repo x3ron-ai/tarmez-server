@@ -3,8 +3,6 @@ from app.api import api_router
 from app.db.session import Base, engine
 import time
 
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI(title="TarmeZ Messenger API")
 
 app.include_router(api_router, prefix="/api")
