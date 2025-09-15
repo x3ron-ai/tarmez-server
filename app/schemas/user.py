@@ -1,5 +1,5 @@
 from typing import Annotated
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, ConfigDict, StringConstraints
 from app.core.config import settings
 
 class UserBase(BaseModel):
@@ -21,8 +21,8 @@ class UserLogin(UserBase):
 
 class UserOut(UserBase):
 	id: int
-	class Config:
-		from_attributes = True
+
+	model_config = ConfigDict(from_attributes=True)
 
 class Token(BaseModel):
 	access_token: str

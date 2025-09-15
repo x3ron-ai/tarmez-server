@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from .message import MessageOut
 
@@ -7,5 +7,4 @@ class ChatOut(BaseModel):
 	username: str
 	last_message: Optional[MessageOut]
 
-	class Config:
-		from_attributes = True
+	model_config = ConfigDict(from_attributes=True)

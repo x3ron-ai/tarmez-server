@@ -10,8 +10,8 @@ client = TestClient(app)
 def user_tokens():
 	name1 = f"user1_{uuid.uuid4()}"
 	name2 = f"user2_{uuid.uuid4()}"
-	u1 = {"username": name1, "password": "pass1"}
-	u2 = {"username": name2, "password": "pass2"}
+	u1 = {"username": name1, "password": "password1"}
+	u2 = {"username": name2, "password": "password2"}
 
 	r = client.post("/api/users/register", json=u1)
 	assert r.status_code == 201
